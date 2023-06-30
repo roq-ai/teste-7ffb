@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model assignment {
+  id                                       String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  project_manager_id                       String?    @db.Uuid
+  data_analyst_id                          String?    @db.Uuid
+  excel_file_id                            String     @db.Uuid
+  created_at                               DateTime   @default(now()) @db.Timestamp(6)
+  updated_at                               DateTime   @default(now()) @db.Timestamp(6)
+  user_assignment_data_analyst_idTouser    user?      @relation("assignment_data_analyst_idTouser", fields: [data_analyst_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  excel_file                               excel_file @relation(fields: [excel_file_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_assignment_project_manager_idTouser user?      @relation("assignment_project_manager_idTouser", fields: [project_manager_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model excel_file {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  file_name       String       @db.VarChar(255)
+  data_analyst_id String?      @db.Uuid
+  organization_id String       @db.Uuid
+  created_at      DateTime     @default(now()) @db.Timestamp(6)
+  updated_at      DateTime     @default(now()) @db.Timestamp(6)
+  assignment      assignment[]
+  user            user?        @relation(fields: [data_analyst_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organization    organization @relation(fields: [organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model organization {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description String?      @db.VarChar(255)
+  image       String?      @db.VarChar(255)
+  name        String       @db.VarChar(255)
+  created_at  DateTime     @default(now()) @db.Timestamp(6)
+  updated_at  DateTime     @default(now()) @db.Timestamp(6)
+  user_id     String       @db.Uuid
+  tenant_id   String       @db.VarChar(255)
+  excel_file  excel_file[]
+  user        user         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id                                             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                          String         @unique @db.VarChar(255)
+  firstName                                      String?        @db.VarChar(255)
+  lastName                                       String?        @db.VarChar(255)
+  roq_user_id                                    String         @db.VarChar(255)
+  tenant_id                                      String         @db.VarChar(255)
+  created_at                                     DateTime       @default(now()) @db.Timestamp(6)
+  updated_at                                     DateTime       @default(now()) @db.Timestamp(6)
+  assignment_assignment_data_analyst_idTouser    assignment[]   @relation("assignment_data_analyst_idTouser")
+  assignment_assignment_project_manager_idTouser assignment[]   @relation("assignment_project_manager_idTouser")
+  excel_file                                     excel_file[]
+  organization                                   organization[]
+}
